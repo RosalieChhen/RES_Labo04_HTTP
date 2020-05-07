@@ -22,6 +22,8 @@ COPY ./public-html /var/www/html/
 
 4. Explore the structure of the image
 
+Tentative de connexion avec le serveur établi avec netcat : le serveur tourne et répond avec le code status _400 Bad Request_.
+
 ![](rapport-pictures/step1image1.PNG)
 
 5. Add the conf/content
@@ -33,6 +35,6 @@ docker build -t res/apache_php .
 docker run -d -p 9090:80 res/apache_php
 ```
 
-![](rapport-pictures/step1.image2.PNG)
+![](rapport-pictures/step1image2.PNG)
 
 
