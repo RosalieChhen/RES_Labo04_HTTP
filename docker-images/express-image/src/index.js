@@ -5,7 +5,7 @@ var express = require('express');
 var app = express();
 
 app.get('/', function(req, res){
-    res.send(generateEmployees(req.query.maxNb))
+    res.send(generateEmployees(req.query.maxNb == undefined ? 10 : req.query.maxNb))
 });
 
 app.listen(3000, function(){
@@ -19,6 +19,8 @@ function generateEmployees(maxNb){
     });
 
     var employees = [];
+
+    console.log("numberOfEmployees : " + numberOfEmployees);
 
     for(var i = 0; i < numberOfEmployees; ++i){
         var gender = chance.gender()

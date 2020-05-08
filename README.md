@@ -97,7 +97,7 @@ var express = require('express');
 var app = express();
 
 app.get('/', function(req, res){
-    res.send(generateEmployees(req.query.maxNb))
+    res.send(generateEmployees(req.query.maxNb == undefined ? 10 : req.query.maxNb))
 });
 
 app.listen(3000, function(){
@@ -139,3 +139,7 @@ http://localhost:3000/?maxNb=12
 
 3. Run and test the containers
 
+Dans cet étape, nous avons build notre nouvelle version de notre container et l'avons démarrer sur un port comme le 9090. <br />
+Nous pouvons voir dans cette image que nous avons démarré un container sur le port 9090 qu'on peut accéder via Postman <br />
+
+![](rapport-pictures/step2image3.png)
