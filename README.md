@@ -4,12 +4,9 @@
 
 1. Create a repo 
 
-Création du répertoire 
+Création du répertoire docker-images/apache-php-image/
 
-> **Labo 04** 
-	> **docker-images** 
-		> **apache-php-image**   
-			> **public-html** et Dockerfile
+Dans ce dossier, on créé un dossier public-html et un Dockerfile.
 
 2. Create a Docker image from a base Docker image
 
@@ -40,12 +37,7 @@ docker run -d -p 9090:80 res/apache_php
 
 ## Step 2a
 
-1. Création du répertoire
-
-> **Labo 04**
-	> **docker-images**
-		> **express-image**
-			> Dockerfile
+1. Création du répertoire express-image dans docker-images, et ajout d'un Dockerfile.
 
 2. Create a Docker image from a base Docker image
 
@@ -69,6 +61,7 @@ var chance = new Chance();
 
 console.log("Bonjour " + chance.name());
 ```
+
 4. Explore the structure
 
 On peut constater en démarrant le container que la version est la bonne
@@ -138,4 +131,132 @@ http://localhost:3000/?maxNb=12
 ![](rapport-pictures/step2image2.png)
 
 3. Run and test the containers
+
+## Step 3b
+
+Configuration d'un reverse proxy dont on hardcode les adresses ip des containers qui font tourner le serveur web et teste du reverse proxy en interactif dans un container.
+
+1. Configuration du reverse proxy
+
+On lance un container avec l'image apache-php statique et un autre avec l'image express dynamique et on regarde leur adresse ip :
+
+apache_static : 172.17.0.2
+express_dynamic : 172.17.0.3
+
+![](rapport-pictures/step3bimage1.png)
+
+On contrôle en se plaçant dans la vm de docker (avec docker-machine sur windows) qu'on peut envoyer une requête GET / HTTP/1.0 au serveur, avec telnet aux 2 adresses ip.
+
+![](rapport-pictures/step3bimage2.png) 
+
+On lance un container avec l'image php:7.2-apache en interactif et port-mappé sur le port 8080.
+```
+docker run -it -p 8080:80 php:7.2-apache /bin/bash
+```
+
+ On créé une configruation dans le dossier etc/apache2/sites-available dans un fichier nommé 001-reverse-proxy.conf.
+
+(Et installation de vim dans ce container).
+
+Contenu du fichier de configuration (la première règle renvoie à la page dynamique et la règle générale à la page statique) : 
+
+![](rapport-pictures/step3bimage3.png)
+
+2. Tester le reverse proxy
+
+Toujours dans le container, on active les modules nécessaire à la configuration (précisé dans la documentation), avec les commandes suivantes :
+
+```
+a2enmod proxy
+a2enmod proxy_http
+
+service apache2 restart
+```
+
+On établit la connexion à travers le reverse proxy, depuis l'extérieur (on utilise donc l'adresse ip utilisée par docker et le port 8080 auquel on a mappé le container du reverse-proxy).
+
+Avec une requête qui doit suivre la première règle de la configuration (retourne page dynamique).
+
+![](rapport-pictures/step3bimage4.png)
+
+Avec une requête qui doit suivre la règle générale de la configuration (retourne page statique).
+
+![](rapport-pictures/step3bimage5.png)
+
+## Step 3c
+
+Configuration d'un reverse proxy dont on hardcode les adresses ip des containers qui font tourner le serveur web et teste du reverse proxy avec une image pour le reverse-proxy.
+
+1. On créé un dossier dans docker-images, pour le reverse-proxy avec un Dockerfile.
+
+Contenu du Dockerfile : 
+
+```
+FROM php:7.2-apache
+
+COPY conf/ /etc/apache2
+
+RUN a2enmod proxy proxy_http
+RUN a2ensite 000-* 001-*
+```
+
+2. Configuration du reverse proxy
+
+Dans le dossier docker-images/apache-reverse-proxy/conf/sites-available, on créé les fichiers 000-default.conf et 001-reverse-proxy.conf. 
+
+On lance un container avec l'image apache-php statique et un autre avec l'image express dynamique et on regarde leur adresse ip :
+
+apache_php : 172.17.0.3
+express : 172.17.0.2
+
+Contenu du fichier de configuration (la première règle renvoie à la page dynamique et la règle générale à la page statique) : 
+
+```
+<VirtualHost *:80>
+    ServerName rorobastien.res.ch
+
+    #ErrorLog ${APACHE_LOG_DIR}/error.log
+    #CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    ProxyPass "/api/employees/" "http://172.17.0.2:3000/"
+    ProxyPassReverse "/api/employees/" "http://172.17.0.2:3000/"
+    
+    ProxyPass "/" "http://172.17.0.3:80/"
+    ProxyPassReverse "/" "http://172.17.0.3:80/"
+
+</VirtualHost>
+```
+
+3. Test du reverse-proxy
+
+On lance un container avec l'image apache-reverse-proxy.
+
+![](rapport-pictures/step3cimage1.png)
+
+On établit la connexion à travers le reverse proxy.
+
+Avec une requête qui doit suivre la première règle de la configuration (retourne page dynamique).
+
+![](rapport-pictures/step3cimage2.png)
+
+Avec une requête qui doit suivre la règle générale de la configuration (retourne page statique).
+
+![](rapport-pictures/step3cimage3.png)
+
+4. Configurations DNS
+
+On modifier le fichier hosts (sous windows) qui se trouve dans etc pour faire correspondre l'addresse ip utilisée par le reverse-proxy avec le nom du serveur :
+```
+192.168.99.100 	rorobastien.res.ch
+```
+
+Sur un browser, on voit que la configuration a fonctionné :
+
+![](rapport-pictures/step3cimage4.png)
+
+![](rapport-pictures/step3cimage5.png)
+
+
+
+
 
