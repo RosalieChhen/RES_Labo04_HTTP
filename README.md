@@ -140,14 +140,16 @@ Configuration d'un reverse proxy dont on hardcode les adresses ip des containers
 
 On lance un container avec l'image apache-php statique et un autre avec l'image express dynamique et on regarde leur adresse ip :
 
+```
 apache_static : 172.17.0.2
 express_dynamic : 172.17.0.3
+```
 
-![](rapport-pictures/step3bimage1.png)
+![](rapport-pictures/step3bimage1.PNG)
 
 On contrôle en se plaçant dans la vm de docker (avec docker-machine sur windows) qu'on peut envoyer une requête GET / HTTP/1.0 au serveur, avec telnet aux 2 adresses ip.
 
-![](rapport-pictures/step3bimage2.png) 
+![](rapport-pictures/step3bimage2.PNG) 
 
 On lance un container avec l'image php:7.2-apache en interactif et port-mappé sur le port 8080.
 ```
@@ -160,7 +162,7 @@ docker run -it -p 8080:80 php:7.2-apache /bin/bash
 
 Contenu du fichier de configuration (la première règle renvoie à la page dynamique et la règle générale à la page statique) : 
 
-![](rapport-pictures/step3bimage3.png)
+![](rapport-pictures/step3bimage3.PNG)
 
 2. Tester le reverse proxy
 
@@ -177,11 +179,11 @@ On établit la connexion à travers le reverse proxy, depuis l'extérieur (on ut
 
 Avec une requête qui doit suivre la première règle de la configuration (retourne page dynamique).
 
-![](rapport-pictures/step3bimage4.png)
+![](rapport-pictures/step3bimage4.PNG)
 
 Avec une requête qui doit suivre la règle générale de la configuration (retourne page statique).
 
-![](rapport-pictures/step3bimage5.png)
+![](rapport-pictures/step3bimage5.PNG)
 
 ## Step 3c
 
@@ -206,8 +208,10 @@ Dans le dossier docker-images/apache-reverse-proxy/conf/sites-available, on cré
 
 On lance un container avec l'image apache-php statique et un autre avec l'image express dynamique et on regarde leur adresse ip :
 
+```
 apache_php : 172.17.0.3
 express : 172.17.0.2
+```
 
 Contenu du fichier de configuration (la première règle renvoie à la page dynamique et la règle générale à la page statique) : 
 
@@ -231,17 +235,17 @@ Contenu du fichier de configuration (la première règle renvoie à la page dyna
 
 On lance un container avec l'image apache-reverse-proxy.
 
-![](rapport-pictures/step3cimage1.png)
+![](rapport-pictures/step3cimage1.PNG)
 
 On établit la connexion à travers le reverse proxy.
 
 Avec une requête qui doit suivre la première règle de la configuration (retourne page dynamique).
 
-![](rapport-pictures/step3cimage2.png)
+![](rapport-pictures/step3cimage2.PNG)
 
 Avec une requête qui doit suivre la règle générale de la configuration (retourne page statique).
 
-![](rapport-pictures/step3cimage3.png)
+![](rapport-pictures/step3cimage3.PNG)
 
 4. Configurations DNS
 
@@ -252,9 +256,9 @@ On modifier le fichier hosts (sous windows) qui se trouve dans etc pour faire co
 
 Sur un browser, on voit que la configuration a fonctionné :
 
-![](rapport-pictures/step3cimage4.png)
+![](rapport-pictures/step3cimage4.PNG)
 
-![](rapport-pictures/step3cimage5.png)
+![](rapport-pictures/step3cimage5.PNG)
 
 
 
