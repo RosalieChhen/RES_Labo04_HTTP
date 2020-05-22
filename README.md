@@ -82,7 +82,7 @@ npm install --save express
 
 Pour pouvoir retourner un payload json lorsqu'on accède à l'URL, nous avons modifié notre précédent index.js avec les lignes suivantes :
 
-```
+```javascript
 var Chance = require('chance');
 var chance = new Chance();
 
@@ -131,6 +131,8 @@ http://localhost:3000/?maxNb=12
 ![](rapport-pictures/step2image2.png)
 
 3. Run and test the containers
+
+
 
 ## Step 3b
 
@@ -262,7 +264,54 @@ Sur un browser, on voit que la configuration a fonctionné :
 
 ## Step 4
 
-1. Modify les images pour installer vim
+1. Update the images to install vim
 
-Préférant utilisant nano, nous avons donc installer nano à la place de vim.
+Préférant utilisant nano, nous avons donc installer nano à la place de vim et avons donc modifié l'étape proposé de la manière suivante :
 
+```docker
+RUN apt-get update && \
+    apt-get install -y nano
+```
+
+2. Log into the static http container
+
+Pour cette partie, nous avons préféré directement modifier et rebuild à chaque fois qu'on réalisait des changements dans notre éditeur de texte (dans notre cas cela était Visual Studio Code et Atom) et n'avons donc pas réalisé les modifications en mode interactive de notre container.
+
+3. Create our own Javascript script
+
+La vidéo nous propose d'utiliser un modèle de site Web qui possède déjà Jquery. Notre modèle apache statique que nous avons décidé d'utiliser n'utilise pas Jquery. Par conséquent, il nous a donc fallu le télécharger et l'ajouter avec également la partie bootstrap car notre animation de café ne l'utilisait pas.
+
+On peut retrouver ici le lien pour télécharger bootstrap
+
+https://getbootstrap.com/
+
+Et le lien ici pour télécharger Jquery
+
+https://jquery.com/download/
+
+4. Use JQuery to do an AJAX request + to update a DOM element
+
+Le code Javascript que nous avons réalisé pour cette partie est le suivant. Nous avons rajouté une "table" qui contiendra la liste des employés proposés par notre entreprise rorobastien.  :
+
+```javascript
+$(function(){
+
+    function loadEmployees(){
+        $.getJSON( "/api/employees/", function( employees ) {
+            $('#employees tbody').empty();
+            $.each( employees, function( id, employee ) {
+                $("#employees tbody").append('<tr><td>' + employee.firstName + '</td><td>' + employee.lastName + 
+                '</td><td>' + employee.gender + '</td><td>' + employee.email + '</td><td>' + employee.salary + '</td></tr>')
+            });
+        });
+    }
+
+    loadEmployees();
+    setInterval(loadEmployees, 5000);
+
+});
+```
+
+5. Rendu final de notre application
+
+![](rapport-pictures/step4image1.png)
