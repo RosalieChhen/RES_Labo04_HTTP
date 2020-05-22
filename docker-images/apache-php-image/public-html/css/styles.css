@@ -1,6 +1,24 @@
 body {
     background: bisque;
   }
+
+.ourTableOfEmployees tr{
+  background-color: #F2C288;
+  color: #8A5618;
+}
+
+.ourTableOfEmployees thead tr{
+  background-color: #D19D5F;
+}
+
+.wouldYouLike{
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+  *, ::after, ::before{
+    box-sizing: initial;
+  }
   
   .row {
     position: relative;
