@@ -315,3 +315,65 @@ $(function(){
 5. Rendu final de notre application
 
 ![](rapport-pictures/step4image1.png)
+
+## Step 5
+
+1. Add a setup phase in the RP Dockerfile (change CMD and invoke a script)
+
+Dans la vidéo, on peut constater que la version de php utilisée est la 5.6, par conséquent, il nous a fallu trouver le git où la version de php correspond à la notre (qui est la version 7.2)
+
+Nous l'avons trouvé au lien ci-dessous :
+https://github.com/docker-library/php/tree/master/7.2/buster/apache
+
+On peut constater que quelques changements se sont fait notamment apache-foreground qui est différent de celui présenté dans la vidéo (où seuls 3 lignes y sont présentes)
+
+Par contre, nous avons constaté qu'il n'y a pas de changement concernant la commande utilisée à la fin qui est "apache-foreground".
+
+De même il n'y a pas de modification concernant le dossier /usr/local/bin qui est le même utilisé que dans la version 5.6
+
+2. Use PHP to create a template for the RP configuration file
+
+Pour cette partie, nous avons préféré ne pas modifier notre variable d'environnement ou d'installer php sur notre machine et par conséquent, nous n'avons pas testé le fonctionnement de notre script PHP. Le code est le suivant :
+
+```php
+<?php
+    $ip_static = getenv('STATIC_IP');
+    $ip_dynamic = getenv('DYNAMIC_IP');
+?>
+
+<VirtualHost *:80>
+    ServerName rorobastien.res.ch
+
+    #ErrorLog ${APACHE_LOG_DIR}/error.log
+    #CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    ProxyPass '/api/employees/' 'http://<?php echo "$ip_dynamic" ?>/'
+    ProxyPassReverse '/api/employees/' 'http://<?php echo "$ip_dynamic" ?>/'
+    
+    ProxyPass '/' 'http://<?php echo "$ip_static" ?>/'
+    ProxyPassReverse '/' 'http://<?php echo "$ip_static" ?>/'
+
+</VirtualHost>
+```
+
+Puis nous allons modifier notre Dockerfile de manière à copier ce fichier PHP dans notre image docker.
+
+```docker
+COPY apache2-foreground /usr/local/bin/
+```
+
+Nous allons également ajouté le script suivant à apache2-foreground pour pouvoir se baser non-pas sur des IP statiques mais sur des IP dynamiques
+
+```bash
+# Setup for RES lab
+echo "Setup for RES lab..."
+echo "Static app URL : $STATIC_IP"
+echo "Dynamic app URL : $DYNAMIC_IP"
+php /var/apache2/templates/config-template.php > /etc/apache2/sites-available/001-reverse-proxy.conf
+```
+
+3. Testing our container
+
+On peut constater en lançant une multitude de container puis en utilisant nos variables d'environnement que notre setup fonctionne.
+
+![](rapport-pictures/step5image1.png)
