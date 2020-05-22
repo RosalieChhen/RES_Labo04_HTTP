@@ -260,7 +260,9 @@ Sur un browser, on voit que la configuration a fonctionné :
 
 ![](rapport-pictures/step3cimage5.PNG)
 
+## Step 4
 
+1. Modify les images pour installer vim
 
-
+Préférant utilisant nano, nous avons donc installer nano à la place de vim.
 
