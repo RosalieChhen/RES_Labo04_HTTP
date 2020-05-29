@@ -450,8 +450,53 @@ Pour cette partie, nous allons étendre notre configuration de ReverseProxy pour
 
 Pour cela, nous allons devoir activer la répartition de charge sur notre container Apache Reverse Proxy.
 
-1. La première étape est d'activer le module <b>proxy_balancer</b>. Pour cela, nous allons modifier la ligne suivante dans notre Dockerfile en y ajoutant le dit module.
+1. La première étape est d'activer les modules nécessaires au fonctionnement du Load balancing. Pour cela, nous allons modifier la ligne suivante dans notre Dockerfile en y ajoutant différents modules.
 
 ```
 RUN a2enmod proxy proxy_http proxy_balancer proxy_hcheck lbmethod_byrequests
 ```
+
+2. Nous allons devoir également modifier notre template de configuration pour pouvoir gérer une liste de Containers qui feront office de "server node".
+
+```php
+<?php
+    $ip_dynamic = explode(";",getenv('DYNAMIC_IP'));
+    $ip_static = explode(";", getenv('STATIC_IP'));
+?>
+
+<VirtualHost *:80>
+    ServerName rorobastien.res.ch
+
+    # ErrorLog ${APACHE_LOG_DIR}/error.log
+    # CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    <Proxy balancer://dynamicCluster>
+<?php for ($i = 0; $i < count($ip_dynamic); $i++)
+    echo "      BalancerMember ". $ip_dynamic[$i] . "\n";
+?>
+    </Proxy>
+
+    <Proxy balancer://staticCluster>
+<?php for ($i = 0; $i < count($ip_static); $i++)
+    echo "      BalancerMember ". $ip_static[$i] . "\n";
+?>
+    </Proxy>
+
+    ProxyPreserveHost On
+
+    ProxyPass "/api/employees/" "balancer://dynamicCluster/"
+    ProxyPassReverse "/api/employees/" "balancer://dynamicCluster/"
+    
+    ProxyPass "/" "balancer://staticCluster/"
+    ProxyPassReverse "/" "balancer://staticCluster/"
+
+</VirtualHost>
+
+```
+
+3. Pour prouver le bon fonctionnement de notre LoadBalancing, nous allons effectuer un test. Le premier test considère qu'il y a une défaillance sur l'ensemble des serveurs. Il n'y donc plus aucun serveur express qui fonctionne.
+
+![](rapport-pictures/step7image1.png)
+
+On peut constater qu'à un certain moment notre application réalise des connections vers 172.17.0.6 puis vers le deuxième serveur qui est 172.17.0.7. Finalement on s'aperçoit qu'il peut accéder à aucun des 2 serveurs et annonce qu'il n'y a aucune roûte vers l'hôte. 
+

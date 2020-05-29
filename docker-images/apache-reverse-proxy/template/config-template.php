@@ -6,8 +6,8 @@
 <VirtualHost *:80>
     ServerName rorobastien.res.ch
 
-    # ErrorLog ${APACHE_LOG_DIR}/error.log
-    # CustomLog ${APACHE_LOG_DIR}/access.log combined
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
 
     <Proxy balancer://dynamicCluster>
 <?php for ($i = 0; $i < count($ip_dynamic); $i++)
