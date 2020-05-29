@@ -1,18 +1,32 @@
 <?php
-    $ip_static = getenv('STATIC_IP');
-    $ip_dynamic = getenv('DYNAMIC_IP');
+    $ip_dynamic = explode(";",getenv('DYNAMIC_IP'));
+    $ip_static = explode(";", getenv('STATIC_IP'));
 ?>
 
 <VirtualHost *:80>
     ServerName rorobastien.res.ch
 
-    #ErrorLog ${APACHE_LOG_DIR}/error.log
-    #CustomLog ${APACHE_LOG_DIR}/access.log combined
+    # ErrorLog ${APACHE_LOG_DIR}/error.log
+    # CustomLog ${APACHE_LOG_DIR}/access.log combined
 
-    ProxyPass '/api/employees/' 'http://<?php echo "$ip_dynamic" ?>/'
-    ProxyPassReverse '/api/employees/' 'http://<?php echo "$ip_dynamic" ?>/'
+    <Proxy balancer://dynamicCluster>
+<?php for ($i = 0; $i < count($ip_dynamic); $i++)
+    echo "      BalancerMember ". $ip_dynamic[$i] . "\n";
+?>
+    </Proxy>
+
+    <Proxy balancer://staticCluster>
+<?php for ($i = 0; $i < count($ip_static); $i++)
+    echo "      BalancerMember ". $ip_static[$i] . "\n";
+?>
+    </Proxy>
+
+    ProxyPreserveHost On
+
+    ProxyPass "/api/employees/" "balancer://dynamicCluster/"
+    ProxyPassReverse "/api/employees/" "balancer://dynamicCluster/"
     
-    ProxyPass '/' 'http://<?php echo "$ip_static" ?>/'
-    ProxyPassReverse '/' 'http://<?php echo "$ip_static" ?>/'
+    ProxyPass "/" "balancer://staticCluster/"
+    ProxyPassReverse "/" "balancer://staticCluster/"
 
 </VirtualHost>

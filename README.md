@@ -377,3 +377,81 @@ php /var/apache2/templates/config-template.php > /etc/apache2/sites-available/00
 On peut constater en lançant une multitude de container puis en utilisant nos variables d'environnement que notre setup fonctionne.
 
 ![](rapport-pictures/step5image1.png)
+
+## Step 6
+
+1. Dans cette étape, nous n'aurons plus besoin de gérer nos Docker via le terminal, mais nous pouvons utiliser une interface graphique. Pour cela, nous avons décidé d'utiliser https://www.portainer.io/. 
+
+2. La procédure d'installation est la suivante :
+
+```bash
+docker volume create portainer_data
+docker run -d -p 8000:8000 -p 9000:9000 --name=portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer
+```
+
+Il suffit après d'aller à l'adresse http://localhost:9000
+
+![](rapport-pictures/step6image1.png)
+
+Où vous pourrez créer votre utilisateur administrateur
+
+![](rapport-pictures/step6image2.png)
+
+Après avoir enregistré utilisateur, choisissez que vous allez gérer votre environnement local Docker puis cliquez sur le bouton "Connect".
+
+![](rapport-pictures/step6image3.png)
+
+Vous arrivez sur cette page. Cliquez sur le Endpoitn "local" pour accéder à vos images "local" et à vos containers.
+
+3. Démarrer notre application rorobastien.res.ch
+
+Pour démarrer nos différents containers qui sont formés des images :
+
+- apache_static
+- express_rorobastien
+- apache_rp
+
+Nous devons démarrer un container pour cela, aller dans l'onglet "Containers" puis cliquer sur "Add container"
+
+![](rapport-pictures/step6image4.png)
+
+Puis, nous allons démarrer notre container "apache_static" en premier (il n'y a pas d'importance hormis pour le dernier container qui est apache_rp), pour cela, il suffit de remplir le formulaire de la même manière que la capture d'écran ci-dessous :
+
+![](rapport-pictures/step6image5.png)
+
+De même, il suffit de démarrer le container "express_rorobastien" également de la même manière que dans l'image précédente.
+
+Finalement, nous allons démarrer notre container "apache_rp", pour cela la configuration du démarrage de notre container va légèrement différer.
+
+Nous allons tout d'abord devoir inspecter les adresse IP de nos containers. Nous pouvons les observer dans la liste des "container" dans l'onglet "Containers"
+
+![](rapport-pictures/step6image6.png)
+
+Nous noterons alors pour les variables d'environnements les valeurs suivantes :
+
+```bash
+STATIC_IP=172.17.0.3:80
+DYNAMIC_IP=172.17.0.4:3000
+```
+
+Nous allons donc démarrer notre container apache reverse proxy avec la configuration suivante :
+
+![](rapport-pictures/step6image7.png)
+
+4. Rendu et vérification
+
+On peut constater que notre environemment d'application travaille correctement. Puisque notre container reverse proxy redirige correctement vers notre page pour les cafés.
+
+![](rapport-pictures/step6image8.png)
+
+## Step 7
+
+Pour cette partie, nous allons étendre notre configuration de ReverseProxy pour pouvoir supporter la Répartition de charge (Load balancing en anglais).
+
+Pour cela, nous allons devoir activer la répartition de charge sur notre container Apache Reverse Proxy.
+
+1. La première étape est d'activer le module <b>proxy_balancer</b>. Pour cela, nous allons modifier la ligne suivante dans notre Dockerfile en y ajoutant le dit module.
+
+```
+RUN a2enmod proxy proxy_http proxy_balancer proxy_hcheck lbmethod_byrequests
+```
