@@ -16,7 +16,7 @@ ip_static_2=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPA
 docker run -d --name static_3 res/apache_static
 ip_static_3=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' static_3)":80"
 
-export STATIC_IP=${ip_static_1}";"${ip_static_2}";"${ip_static_3}
+static_ip="http://${ip_static_1};http://${ip_static_2};http://${ip_static_3}"
 
 
 docker run -d --name dynamic_1 res/express_dynamic
@@ -28,9 +28,10 @@ ip_dynamic_2=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IP
 docker run -d --name dynamic_3 res/express_dynamic
 ip_dynamic_3=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dynamic_3)":3000"
 
-export DYNAMIC_IP=${ip_dynamic_1}";"${ip_dynamic_2}";"${ip_dynamic_3}
+dynamic_ip="http://${ip_dynamic_1};http://${ip_dynamic_2};http://${ip_dynamic_3}"
+
 
 echo "IpAdresses statiques : $ip_static_1, $ip_static_2, $ip_static_3"
 echo "IpAdresses statiques : $ip_dynamic_1, $ip_dynamic_2, $ip_dynamic_3"
 
-docker run -d -e STATIC_IP -e DYNAMIC_IP -p 8080:80 --name reverseProxy res/apache_rp
+docker run -d -e STATIC_IP=$static_ip -e DYNAMIC_IP=$dynamic_ip -p 8080:80 --name reverseProxy res/apache_rp
