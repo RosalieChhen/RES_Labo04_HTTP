@@ -1,6 +1,6 @@
 <?php
-    $ip_static = getenv('STATIC_IP');
-    $ip_dynamic = getenv('DYNAMIC_IP');
+    $ip_dynamic = explode(";",getenv('DYNAMIC_IP'));
+    $ip_static = explode(";", getenv('STATIC_IP'));
 ?>
 
 <VirtualHost *:80>
@@ -10,20 +10,23 @@
     # CustomLog ${APACHE_LOG_DIR}/access.log combined
 
     <Proxy balancer://dynamicCluster>
-        BalancerMember http://172.17.0.7:3000
-        BalancerMember http://172.17.0.6:3000
+<?php for ($i = 0; $i < count($ip_dynamic); $i++)
+    echo "      BalancerMember ". $ip_dynamic[$i] . "\n";
+?>
     </Proxy>
 
     <Proxy balancer://staticCluster>
-        BalancerMember http://172.17.0.5:80
-        BalancerMember http://172.17.0.4:80
-        BalancerMember http://172.17.0.3:80
+<?php for ($i = 0; $i < count($ip_static); $i++)
+    echo "      BalancerMember ". $ip_static[$i] . "\n";
+?>
     </Proxy>
 
-    ProxyPass '/' 'balancer://staticCluster/'
-    ProxyPassReverse '/' 'balancer://staticCluster/'
+    ProxyPreserveHost On
 
-    ProxyPass '/api/employees/' 'balancer://dynamicCluster/'
-    ProxyPassReverse '/api/employees/' 'balancer://dynamicCluster/'
+    ProxyPass "/api/employees/" "balancer://dynamicCluster/"
+    ProxyPassReverse "/api/employees/" "balancer://dynamicCluster/"
+    
+    ProxyPass "/" "balancer://staticCluster/"
+    ProxyPassReverse "/" "balancer://staticCluster/"
 
 </VirtualHost>
