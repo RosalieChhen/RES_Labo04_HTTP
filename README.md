@@ -443,3 +443,15 @@ Nous allons donc démarrer notre container apache reverse proxy avec la configur
 On peut constater que notre environemment d'application travaille correctement. Puisque notre container reverse proxy redirige correctement vers notre page pour les cafés.
 
 ![](rapport-pictures/step6image8.png)
+
+## Step 7
+
+Pour cette partie, nous allons étendre notre configuration de ReverseProxy pour pouvoir supporter la Répartition de charge (Load balancing en anglais).
+
+Pour cela, nous allons devoir activer la répartition de charge sur notre container Apache Reverse Proxy.
+
+1. La première étape est d'activer le module <b>proxy_balancer</b>. Pour cela, nous allons modifier la ligne suivante dans notre Dockerfile en y ajoutant le dit module.
+
+```
+RUN a2enmod proxy proxy_http proxy_balancer proxy_hcheck lbmethod_byrequests
+```
