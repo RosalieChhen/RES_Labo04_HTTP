@@ -1,4 +1,8 @@
 #!/bin/bash
+docker kill static_1 static_2 static_3 dynamic_1 dynamic_2 dynamic_3 reverseProxy
+docker rm static_1 static_2 static_3 dynamic_1 dynamic_2 dynamic_3 reverseProxy
+docker rmi -f res/apache_static res/express_dynamic res/apache_rp
+
 docker build -t res/apache_static ./apache-php-image
 docker build -t res/express_dynamic ./express-image
 docker build -t res/apache_rp ./apache-reverse-proxy 
