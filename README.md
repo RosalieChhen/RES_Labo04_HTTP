@@ -506,8 +506,65 @@ Dans cette image ci-dessus, on voit qu'à la flèche 1, notre premier container 
 
 ## Step 8
 
-1. ???
+1. Le load-balancing d'apache utilise un round-robin par défaut pour répartir les charges. Sur l'image ci-dessous, on voit que plusieurs serveurs reçoivent les requêtes sans ordre particuliers. 
 
 ![](rapport-pictures/step8image1.png)
 
-2. 
+2. Pour démontrer la notion de sticky session, nous avons modifié la configuration de notre proxy apache et ajouter l'activation d'un module "headers" au dockerfile. Toutes les requêtes d'un même utilisateur sont mandatée vers le même serveur d'arrière-plan. Nous établissons des sticky session par le biais de cookie, fourni par le serveur d'arrière-plan.
+
+Dans le Dockerfile: 
+```
+RUN a2enmod proxy proxy_http proxy_balancer lbmethod_byrequests headers
+```
+
+Dans le template de configuration php :
+```
+<?php
+    $ip_dynamic = explode(";",getenv('DYNAMIC_IP'));
+    $ip_static = explode(";", getenv('STATIC_IP'));
+?>
+
+<VirtualHost *:80>
+    ServerName rorobastien.res.ch
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    Header add Set-Cookie "ROUTEID=.%{BALANCER_WORKER_ROUTE}e; path=/" env=BALANCER_ROUTE_CHANGED
+
+    <Proxy balancer://dynamicCluster>
+<?php for ($i = 0; $i < count($ip_dynamic); $i++)
+    echo "      BalancerMember ". $ip_dynamic[$i] . "\n";
+?>
+    </Proxy>
+
+    <Proxy balancer://staticCluster>
+<?php for ($i = 0; $i < count($ip_static); $i++)
+    echo "      BalancerMember ". $ip_static[$i] . " route=" . ($i+1) . "\n";
+?>
+
+    ProxySet stickysession=ROUTEID
+    </Proxy>
+
+
+
+    ProxyPreserveHost On
+
+    ProxyPass "/api/employees/" "balancer://dynamicCluster/"
+    ProxyPassReverse "/api/employees/" "balancer://dynamicCluster/"
+    
+    ProxyPass "/" "balancer://staticCluster/"
+    ProxyPassReverse "/" "balancer://staticCluster/"
+
+</VirtualHost>
+```
+
+Nous nous sommes basé sur la documentation d'apache : 
+https://httpd.apache.org/docs/2.4/fr/mod/mod_proxy_balancer.html
+
+Sur l'image ci-dessous on peut voir qu'une session a été crée.
+![](rapport-pictures/step8image3.PNG)
+
+Sur l'image ci-dessous, on peut voir que c'est le serveur static_1 qui reçoit toutes les requêtes et à gauche, le serveur static_2 n'en reçoit aucune. 
+![](rapport-pictures/step8image2.PNG)
+
