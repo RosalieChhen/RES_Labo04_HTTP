@@ -6,8 +6,8 @@
 <VirtualHost *:80>
     ServerName rorobastien.res.ch
 
-    ErrorLog ${APACHE_LOG_DIR}/error.log
-    CustomLog ${APACHE_LOG_DIR}/access.log combined
+    # ErrorLog ${APACHE_LOG_DIR}/error.log
+    # CustomLog ${APACHE_LOG_DIR}/access.log combined
 
     Header add Set-Cookie "ROUTEID=.%{BALANCER_WORKER_ROUTE}e; path=/" env=BALANCER_ROUTE_CHANGED
 
@@ -21,13 +21,17 @@
 <?php for ($i = 0; $i < count($ip_static); $i++)
     echo "      BalancerMember ". $ip_static[$i] . " route=" . ($i+1) . "\n";
 ?>
-
-    ProxySet stickysession=ROUTEID
+        ProxySet stickysession=ROUTEID
     </Proxy>
 
-
+    <Location /balancer-manager>
+        SetHandler balancer-manager
+        Allow from all
+    </Location>
 
     ProxyPreserveHost On
+
+    ProxyPass /balancer-manager !
 
     ProxyPass "/api/employees/" "balancer://dynamicCluster/"
     ProxyPassReverse "/api/employees/" "balancer://dynamicCluster/"

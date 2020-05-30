@@ -513,12 +513,12 @@ Dans cette image ci-dessus, on voit qu'à la flèche 1, notre premier container 
 2. Pour démontrer la notion de sticky session, nous avons modifié la configuration de notre proxy apache et ajouter l'activation d'un module "headers" au dockerfile. Toutes les requêtes d'un même utilisateur sont mandatée vers le même serveur d'arrière-plan. Nous établissons des sticky session par le biais de cookie, fourni par le serveur d'arrière-plan.
 
 Dans le Dockerfile: 
-```
+```docker
 RUN a2enmod proxy proxy_http proxy_balancer lbmethod_byrequests headers
 ```
 
 Dans le template de configuration php :
-```
+```php
 <?php
     $ip_dynamic = explode(";",getenv('DYNAMIC_IP'));
     $ip_static = explode(";", getenv('STATIC_IP'));
@@ -563,8 +563,95 @@ Nous nous sommes basé sur la documentation d'apache :
 https://httpd.apache.org/docs/2.4/fr/mod/mod_proxy_balancer.html
 
 Sur l'image ci-dessous on peut voir qu'une session a été crée.
-![](rapport-pictures/step8image3.PNG)
+![](rapport-pictures/step8image3.png)
 
 Sur l'image ci-dessous, on peut voir que c'est le serveur static_1 qui reçoit toutes les requêtes et à gauche, le serveur static_2 n'en reçoit aucune. 
-![](rapport-pictures/step8image2.PNG)
+![](rapport-pictures/step8image2.png)
 
+# Step 9
+
+Dans cette étape, nous allons ajouter la gestion dynamique des cluster fournissant à l'administrateur la possibilité de gérer de manière dynamique l'activation et la désactivation de certains "Workers".
+
+1. Ajout des modules nécessaires
+
+Pour cela, il nous faudra tout d'abord modifier notre Dockerfile et ajouter le module suivant à la fameuse ligne d'activation des modules :
+
+```docker
+RUN a2enmod proxy proxy_http proxy_balancer lbmethod_byrequests headers status
+```
+
+2. Modification de la configuration
+
+Nous allons également modifier notre configuration du reverse proxy en y ajoutant la section
+Location (qui a été entouré des commentaires "SECTIONAJOUTE"). On va également ajouter la ligne ProxyPass pour pouvoir fournir l'URL nécessaire à l'accès au Balancer-Manager.
+
+La configuration de la section ajoutée va définir qu'on pourra accéder au balancer-manager via n'importe quelle URL et n'importe quel hôte. Bien que cela ne soit pas sécurisé, le fonctionnement et la validation du fonctionement du balancer-manager est le même. Il pourrait être intéressant par exemple d'ajouter une restriction via l'adresse IP ou via un domaine en particulier.
+
+```php
+<?php
+    $ip_dynamic = explode(";",getenv('DYNAMIC_IP'));
+    $ip_static = explode(";", getenv('STATIC_IP'));
+?>
+
+<VirtualHost *:80>
+    ServerName rorobastien.res.ch
+
+    # ErrorLog ${APACHE_LOG_DIR}/error.log
+    # CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    Header add Set-Cookie "ROUTEID=.%{BALANCER_WORKER_ROUTE}e; path=/" env=BALANCER_ROUTE_CHANGED
+
+    <Proxy balancer://dynamicCluster>
+<?php for ($i = 0; $i < count($ip_dynamic); $i++)
+    echo "      BalancerMember ". $ip_dynamic[$i] . "\n";
+?>
+    </Proxy>
+
+    <Proxy balancer://staticCluster>
+<?php for ($i = 0; $i < count($ip_static); $i++)
+    echo "      BalancerMember ". $ip_static[$i] . " route=" . ($i+1) . "\n";
+?>
+        ProxySet stickysession=ROUTEID
+    </Proxy>
+
+    # SECTIONAJOUTE
+
+    <Location /balancer-manager>
+        SetHandler balancer-manager
+        Allow from all
+    </Location>
+
+    # SECTIONAJOUTE
+
+    ProxyPreserveHost On
+
+    # Ligne de configuration ajouté
+
+    ProxyPass /balancer-manager !
+
+    ProxyPass "/api/employees/" "balancer://dynamicCluster/"
+    ProxyPassReverse "/api/employees/" "balancer://dynamicCluster/"
+    
+    ProxyPass "/" "balancer://staticCluster/"
+    ProxyPassReverse "/" "balancer://staticCluster/"
+
+</VirtualHost>
+```
+
+3. Validation du fonctionnement du Balancer-manager
+
+On peut accéder au balancer-manager via l'URL présente dans le navigateur ci-dessous.
+
+![](rapport-pictures/step9image1.png)
+
+Pour valider le fonctionnement du Balancer-manger, nous allons utiliser notre précédente gestion des Sticky session. On peut constater dans l'image ci-dessous que notre navigateur a récupéré la route vers le serveur N°3.
+
+![](rapport-pictures/step9image2.png)
+
+Nous allons désactiver les routes 2 et 3 pour que notre navigateur se redirige uniquement vers la route 1.
+
+![](rapport-pictures/step9image3.png)
+
+Finalement on peut constater que via notre navigateur en observant les cookies, que le cookie ROUTEID a pris la valeur 1.
+
+![](rapport-pictures/step9image4.png)
