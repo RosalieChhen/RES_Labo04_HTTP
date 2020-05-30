@@ -494,9 +494,20 @@ RUN a2enmod proxy proxy_http proxy_balancer proxy_hcheck lbmethod_byrequests
 
 ```
 
-3. Pour prouver le bon fonctionnement de notre LoadBalancing, nous allons effectuer un test. Le premier test considère qu'il y a une défaillance sur l'ensemble des serveurs. Il n'y donc plus aucun serveur express qui fonctionne.
+3. Pour prouver le bon fonctionnement de notre LoadBalancing, nous allons effectuer deux tests. Le premier test considère qu'il y a une défaillance sur l'ensemble des serveurs. Il n'y donc plus aucun serveur express qui fonctionne.
 
 ![](rapport-pictures/step7image1.png)
 
-On peut constater qu'à un certain moment notre application réalise des connections vers 172.17.0.6 puis vers le deuxième serveur qui est 172.17.0.7. Finalement on s'aperçoit qu'il peut accéder à aucun des 2 serveurs et annonce qu'il n'y a aucune roûte vers l'hôte. 
+On peut constater qu'à un certain moment notre application réalise des connections vers 172.17.0.6 puis vers le deuxième serveur qui est 172.17.0.7. Finalement on s'aperçoit qu'il peut accéder à aucun des 2 serveurs et annonce qu'il n'y a aucune roûte vers l'hôte. On valide ainsi que notre Load balancing répartit les tâches entres 3, puis 2 et finalement 1 container. Puis lorsqu'il n'y a plus de container capable de gérer notre requête, notre application ne fonctionne plus.
 
+![](rapport-pictures/step7image2.png)
+
+Dans cette image ci-dessus, on voit qu'à la flèche 1, notre premier container va récupérer le styles.css, à la flèche 2, le second container va récupérer le bootstrap.min.css et le fichier javascript employees.js, puis finalement à la flèche 3, le fichier javascript jquery.min.js. Tout cela est réassemblé pour que notre requête vers la page d'accueil de rorobastien.res.ch est traitée.
+
+## Step 8
+
+1. ???
+
+![](rapport-pictures/step8image1.png)
+
+2. 
